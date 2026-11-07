@@ -1,6 +1,7 @@
 // API отдаёт Access-Control-Allow-Origin: *, поэтому ходим напрямую.
 // Vite-прокси на этот хост отвечает 502 (QRATOR).
-const API_BASE = 'http://api.favorit-parts.ru/hs/hsprice/'
+// HTTPS обязателен для GitHub Pages (иначе mixed content блокирует fetch).
+const API_BASE = 'https://api.favorit-parts.ru/hs/hsprice/'
 const API_KEY = import.meta.env.VITE_API_KEY
 
 function buildUrl({ number, brand, analogues }) {

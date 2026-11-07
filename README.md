@@ -35,7 +35,7 @@ npm run dev
 
 Откройте [http://localhost:5173](http://localhost:5173).
 
-Запросы идут напрямую на `http://api.favorit-parts.ru/hs/hsprice/` — у сервиса открыт CORS (`Access-Control-Allow-Origin: *`).
+Запросы идут напрямую на `https://api.favorit-parts.ru/hs/hsprice/` — у сервиса открыт CORS (`Access-Control-Allow-Origin: *`).
 
 ### Демо-артикулы
 
