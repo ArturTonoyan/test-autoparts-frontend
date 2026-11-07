@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useDispatch, useSelector } from 'react-redux'
 import { Badge, Group, Text, TextInput, ThemeIcon, Title } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { IconChevronRight, IconSearch } from '@tabler/icons-react'
 import { motion } from 'framer-motion'
 import { fetchGoods } from '../api/favoritApi'
@@ -33,6 +34,7 @@ export default function BrandList() {
   const number = useSelector((s) => s.search.number)
   const selected = useSelector((s) => s.search.brand)
   const [q, setQ] = useState('')
+  const isCompact = useMediaQuery('(max-width: 560px)')
 
   const query = useQuery({
     queryKey: ['brands', number],
@@ -67,17 +69,20 @@ export default function BrandList() {
 
   return (
     <FadeIn>
-      <SoftCard className="fp-brands-panel">
+      <SoftCard className="fp-brands-panel" p={isCompact ? 'md' : 'lg'}>
         <div className="fp-brands-panel__head">
           <div>
-            <Group gap="sm" align="center" mb={6}>
-              <Title order={2}>Производители</Title>
+            <Group gap="sm" align="center" mb={6} wrap="wrap">
+              <Title order={2} className="fp-section-title">
+                Производители
+              </Title>
               <Badge variant="light" color="brand" radius="xl">
                 {filtered.length}
               </Badge>
             </Group>
             <Text size="sm" c="dimmed">
-              Артикул <span className="fp-mono">{number}</span> — выберите бренд для этапа 3
+              Артикул <span className="fp-mono">{number}</span>
+              {isCompact ? '' : ' — выберите бренд для этапа 3'}
             </Text>
           </div>
           <Group gap="sm">

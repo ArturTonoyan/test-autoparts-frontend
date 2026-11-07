@@ -13,6 +13,7 @@ import {
   Title,
   Select,
 } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { IconArrowLeft, IconSearch } from '@tabler/icons-react'
 import { fetchGoods } from '../api/favoritApi'
 import { flattenOffers, formatPrice, isEmptyGoods } from '../utils/normalize'
@@ -37,6 +38,8 @@ export default function OffersTable() {
   const [panelH, setPanelH] = useState(0)
   const parentRef = useRef(null)
   const analyticsRef = useRef(null)
+  const isMobile = useMediaQuery('(max-width: 760px)')
+  const isCompact = useMediaQuery('(max-width: 560px)')
 
   const query = useQuery({
     queryKey: ['offers', number, brand],
@@ -77,6 +80,10 @@ export default function OffersTable() {
   }, [rows, queryText, kind, inStockOnly, sort])
 
   useLayoutEffect(() => {
+    if (isMobile) {
+      setPanelH(0)
+      return undefined
+    }
     const el = analyticsRef.current
     if (!el || typeof ResizeObserver === 'undefined') return undefined
 
@@ -85,10 +92,10 @@ export default function OffersTable() {
     const ro = new ResizeObserver(sync)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [rows.length])
+  }, [rows.length, isMobile])
 
   const virtualizer = useVirtualizer({
-    count: filtered.length,
+    count: isMobile ? 0 : filtered.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_H,
     overscan: 8,
@@ -116,13 +123,15 @@ export default function OffersTable() {
       <div className="fp-offers-layout">
         <SoftCard
           className="fp-offers-main"
-          p="lg"
-          style={panelH ? { height: panelH, maxHeight: panelH } : undefined}
+          p={isCompact ? 'md' : 'lg'}
+          style={!isMobile && panelH ? { height: panelH, maxHeight: panelH } : undefined}
         >
           <div className="fp-offers-main__head">
             <Group justify="space-between" align="flex-start" mb="md" wrap="wrap" gap="sm">
               <div>
-                <Title order={2}>Аналоги и предложения</Title>
+                <Title order={2} className="fp-section-title">
+                  Аналоги и предложения
+                </Title>
                 <Text size="sm" c="dimmed" mt={4}>
                   <span className="fp-mono">{brand}</span>
                   {' · '}
@@ -131,13 +140,14 @@ export default function OffersTable() {
                   {filtered.length} из {rows.length}
                 </Text>
               </div>
-              <Group gap="sm">
-                {query.isFetching ? <FetchingBar label="Обновляем предложения…" /> : null}
+              <Group gap="sm" className="fp-offers-toolbar">
+                {query.isFetching ? <FetchingBar label="Обновляем…" /> : null}
                 <Button
                   variant="light"
                   color="gray"
                   leftSection={<IconArrowLeft size={16} />}
                   onClick={() => dispatch(clearBrand())}
+                  fullWidth={isCompact}
                 >
                   К брендам
                 </Button>
@@ -146,43 +156,90 @@ export default function OffersTable() {
 
             <div className="fp-filters">
               <TextInput
-                placeholder="Поиск по названию, бренду, артикулу"
+                placeholder={isCompact ? 'Поиск…' : 'Поиск по названию, бренду, артикулу'}
                 leftSection={<IconSearch size={16} />}
                 value={queryText}
                 onChange={(e) => setQueryText(e.currentTarget.value)}
                 className="fp-filters__search"
               />
               <SegmentedControl
+                className="fp-filters__kind"
+                fullWidth={isCompact}
                 value={kind}
                 onChange={setKind}
                 data={[
                   { label: 'Все', value: 'all' },
-                  { label: 'Оригинал', value: 'original' },
+                  { label: isCompact ? 'Ориг.' : 'Оригинал', value: 'original' },
                   { label: 'Аналоги', value: 'analogue' },
                 ]}
               />
-              <Select
-                value={sort}
-                onChange={(v) => setSort(v || 'price-asc')}
-                data={[
-                  { value: 'price-asc', label: 'Цена ↑' },
-                  { value: 'price-desc', label: 'Цена ↓' },
-                  { value: 'stock-desc', label: 'Остаток ↓' },
-                  { value: 'name', label: 'Название' },
-                ]}
-                allowDeselect={false}
-                w={140}
-              />
-              <Switch
-                label="В наличии"
-                checked={inStockOnly}
-                onChange={(e) => setInStockOnly(e.currentTarget.checked)}
-              />
+              <div className="fp-filters__meta">
+                <Select
+                  value={sort}
+                  onChange={(v) => setSort(v || 'price-asc')}
+                  data={[
+                    { value: 'price-asc', label: 'Цена ↑' },
+                    { value: 'price-desc', label: 'Цена ↓' },
+                    { value: 'stock-desc', label: 'Остаток ↓' },
+                    { value: 'name', label: 'Название' },
+                  ]}
+                  allowDeselect={false}
+                  className="fp-filters__sort"
+                />
+                <Switch
+                  label="В наличии"
+                  checked={inStockOnly}
+                  onChange={(e) => setInStockOnly(e.currentTarget.checked)}
+                />
+              </div>
             </div>
           </div>
 
           {filtered.length === 0 ? (
             <EmptyState title="Нет совпадений" text="Сбросьте фильтры или измените запрос." />
+          ) : isMobile ? (
+            <div className="fp-offer-cards">
+              {filtered.map((row) => (
+                <article key={row.id} className="fp-offer-card">
+                  <div className="fp-offer-card__top">
+                    <Text size="sm" fw={700} lh={1.35} className="fp-offer-card__name">
+                      {row.name}
+                    </Text>
+                    <Badge
+                      size="xs"
+                      variant="light"
+                      color={row.kind === 'analogue' ? 'coral' : 'brand'}
+                      radius="xl"
+                    >
+                      {row.kind === 'analogue' ? 'аналог' : 'оригинал'}
+                    </Badge>
+                  </div>
+                  <Text size="xs" c="dimmed" mt={4}>
+                    {row.brand}
+                    {' · '}
+                    <span className="fp-mono">{row.number}</span>
+                  </Text>
+                  <div className="fp-offer-card__metrics">
+                    <div>
+                      <Text size="xs" c="dimmed">
+                        Цена
+                      </Text>
+                      <Text size="sm" fw={800} c="brand.6">
+                        {formatPrice(row.price)}
+                      </Text>
+                    </div>
+                    <div>
+                      <Text size="xs" c="dimmed">
+                        Остаток
+                      </Text>
+                      <Text size="sm" fw={800} c={row.stock > 0 ? 'teal.7' : 'dimmed'}>
+                        {row.stock}
+                      </Text>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
           ) : (
             <div className="fp-vtable">
               <div className="fp-vtable__head" role="row">

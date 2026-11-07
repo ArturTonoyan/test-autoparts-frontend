@@ -23,8 +23,9 @@ export default function App() {
   const [section, setSection] = useState('search')
   const [opened, { toggle, close }] = useDisclosure(false)
   const isMobile = useMediaQuery('(max-width: 900px)')
+  const isCompact = useMediaQuery('(max-width: 560px)')
   const contentRef = useRef(null)
-  const headerHidden = useScrollHeader(contentRef)
+  const headerHidden = useScrollHeader(contentRef) && !isMobile
 
   const onNavigate = (id) => {
     setSection(id)
@@ -50,34 +51,42 @@ export default function App() {
         opened={opened}
         onClose={close}
         padding={0}
-        size={280}
+        size="85%"
         withCloseButton={false}
-        classNames={{ body: 'fp-drawer-body' }}
+        classNames={{ body: 'fp-drawer-body', content: 'fp-drawer' }}
       >
         <Sidebar section={section} onNavigate={onNavigate} />
       </Drawer>
 
       <div className="fp-dash__main">
         <header className={`fp-dash__header${headerHidden ? ' is-hidden' : ''}`}>
-          <Group gap="sm">
-            {isMobile && <Burger opened={opened} onClick={toggle} size="sm" />}
-            <div>
-              <Title order={1}>Подбор запчастей</Title>
-              <Text c="dimmed" size="sm" mt={2}>
-                Сводка по артикулу, брендам и складским предложениям
-              </Text>
+          <Group gap="sm" wrap="nowrap" className="fp-dash__title-group">
+            {isMobile && <Burger opened={opened} onClick={toggle} size="sm" aria-label="Меню" />}
+            <div className="fp-dash__titles">
+              <Title order={1} className="fp-dash__heading">
+                Подбор запчастей
+              </Title>
+              {!isCompact && (
+                <Text c="dimmed" size="sm" mt={2} className="fp-dash__subtitle">
+                  Сводка по артикулу, брендам и складским предложениям
+                </Text>
+              )}
             </div>
           </Group>
 
-          <Group gap="sm" className="fp-dash__actions">
-            <ActionIcon variant="white" radius="xl" size={40} className="fp-icon-btn">
-              <IconMail size={18} />
-            </ActionIcon>
-            <ActionIcon variant="white" radius="xl" size={40} className="fp-icon-btn">
-              <IconBell size={18} />
-            </ActionIcon>
-            <Group gap={10} className="fp-user-chip">
-              <Avatar radius="xl" color="brand" size={40}>
+          <Group gap="sm" className="fp-dash__actions" wrap="nowrap">
+            {!isCompact && (
+              <>
+                <ActionIcon variant="white" radius="xl" size={40} className="fp-icon-btn" aria-label="Почта">
+                  <IconMail size={18} />
+                </ActionIcon>
+                <ActionIcon variant="white" radius="xl" size={40} className="fp-icon-btn" aria-label="Уведомления">
+                  <IconBell size={18} />
+                </ActionIcon>
+              </>
+            )}
+            <Group gap={10} className="fp-user-chip" wrap="nowrap">
+              <Avatar radius="xl" color="brand" size={isCompact ? 36 : 40}>
                 ТА
               </Avatar>
               <div className="fp-user-chip__text">
@@ -94,28 +103,40 @@ export default function App() {
 
         <div className="fp-dash__content" ref={contentRef}>
           <FadeIn>
-            <SoftCard className="fp-search-card">
+            <SoftCard className="fp-search-card" p={isCompact ? 'md' : 'lg'}>
               <Stepper
                 active={active}
-                size="sm"
+                size={isCompact ? 'xs' : 'sm'}
                 allowNextStepsSelect={false}
-                mb="lg"
+                mb={isCompact ? 'md' : 'lg'}
                 color="brand"
+                className="fp-stepper"
                 styles={{
-                  separator: { marginInline: 10 },
+                  separator: { marginInline: isCompact ? 4 : 10 },
                   stepBody: { marginTop: 4 },
+                  stepLabel: isCompact ? { fontSize: 11 } : undefined,
                 }}
               >
-                <Stepper.Step label="Артикул" description={number || 'Ввод номера'} />
-                <Stepper.Step label="Бренд" description={brand || 'Производитель'} />
+                <Stepper.Step
+                  label="Артикул"
+                  description={isCompact ? undefined : number || 'Ввод номера'}
+                />
+                <Stepper.Step
+                  label="Бренд"
+                  description={isCompact ? undefined : brand || 'Производитель'}
+                />
                 <Stepper.Step
                   label="Предложения"
                   description={
-                    brand ? 'Аналоги, цены, остатки' : 'Таблица после выбора бренда'
+                    isCompact
+                      ? undefined
+                      : brand
+                        ? 'Аналоги, цены, остатки'
+                        : 'Таблица после выбора бренда'
                   }
                 />
               </Stepper>
-              <SearchForm />
+              <SearchForm compact={isCompact} />
             </SoftCard>
           </FadeIn>
 
